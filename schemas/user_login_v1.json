@@ -1,0 +1,21 @@
+{
+  "$id": "user.login.v1",
+  "type": "object",
+  "required": [
+    "user_id",
+    "ip",
+    "ts"
+  ],
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

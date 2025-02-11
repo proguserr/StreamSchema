@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "required": ["id", "type", "created_at", "repo", "actor"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "type": "string" },
+    "created_at": { "type": "string" },
+    "repo": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "login": { "type": "string" }
+      }
+    }
+  }
+}

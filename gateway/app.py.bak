@@ -1,0 +1,74 @@
+
+
+import os, json, orjson
+from typing import Optional
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import httpx
+from aiokafka import AIOKafkaProducer
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
+import metrics
+
+metrics.start_metrics(port=int(os.getenv("METRICS_PORT", "9101")))
+app = FastAPI(title="StreamSchema Gateway")
+
+
+REGISTRY_URL = os.getenv("REGISTRY_URL", "http://localhost:8001")
+KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "localhost:9092")
+
+PROD_VALID = Counter("ss_gateway_validations_total","Payload validations",["result"])
+PROD_REJECT = Counter("ss_gateway_produce_rejects_total","Produce rejects",["reason"])
+PROD_LAT = Histogram("ss_gateway_produce_latency_seconds","Produce latency seconds")
+
+app = FastAPI(title="StreamSchema Gateway")
+producer: Optional[AIOKafkaProducer] = None
+client = httpx.AsyncClient(timeout=5.0)
+
+class ProduceBody(BaseModel):
+    subject: str
+    payload: dict
+    topic: str
+    key: Optional[str] = None
+
+@app.on_event("startup")
+async def startup():
+    global producer
+    producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BROKERS, value_serializer=lambda v: orjson.dumps(v))
+    await producer.start()
+
+@app.on_event("shutdown")
+async def shutdown():
+    if producer:
+        await producer.stop()
+    await client.aclose()
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+@app.post("/produce")
+async def produce(body: ProduceBody):
+    try:
+        r = await client.get(f"{REGISTRY_URL}/subjects/{body.subject}/versions/latest")
+        r.raise_for_status()
+        latest = r.json()
+    except Exception as e:
+        PROD_REJECT.labels(reason="registry_lookup_failed").inc()
+        raise HTTPException(400, f"registry error: {e}")
+    schema = latest["schema"]
+    required = set(schema.get("required", []))
+    missing = [k for k in required if k not in body.payload]
+    if missing:
+        PROD_VALID.labels(result="fail").inc()
+        PROD_REJECT.labels(reason="validation_required").inc()
+        raise HTTPException(422, f"missing required fields: {missing}")
+    headers = [("schema-id", latest["fingerprint"].encode())]
+    try:
+        with PROD_LAT.time():
+            await producer.send_and_wait(body.topic, value=body.payload, key=(body.key.encode() if body.key else None), headers=headers)
+        PROD_VALID.labels(result="pass").inc()
+        return {"status":"ok","schema_id": latest["fingerprint"]}
+    except Exception as e:
+        PROD_REJECT.labels(reason="kafka_produce_error").inc()
+        raise HTTPException(500, f"kafka error: {e}")

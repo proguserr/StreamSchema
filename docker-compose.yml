@@ -1,0 +1,102 @@
+
+version: "3.9"
+services:
+  kafka:
+    image: redpandadata/redpanda:v24.1.14
+    command:
+      - redpanda start
+      - --overprovisioned
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://kafka:9092
+    ports:
+      - "19092:9092"
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "rpk cluster info || true"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: streamschema
+      POSTGRES_PASSWORD: streamschema
+      POSTGRES_DB: streamschema
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streamschema"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  registry:
+    build:
+      context: ./registry
+    environment:
+      DATABASE_URL: postgresql+asyncpg://streamschema:streamschema@postgres:5432/streamschema
+      PROM_PORT: "9100"
+    ports:
+      - "8001:8001"
+      - "9100:9100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ./gateway
+    environment:
+      REGISTRY_URL: http://registry:8001
+      KAFKA_BROKERS: kafka:9092
+      PROM_PORT: "9101"
+    ports:
+      - "8002:8002"
+      - "9101:9101"
+    depends_on:
+      kafka:
+        condition: service_started
+      registry:
+        condition: service_started
+
+  consumer:
+    build:
+      context: ./consumer_example
+    environment:
+      REGISTRY_URL: http://registry:8001
+      KAFKA_BROKERS: kafka:9092
+      TOPIC: events.demo
+    depends_on:
+      kafka:
+        condition: service_started
+      registry:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - registry
+      - gateway
+
+  grafana:
+    image: grafana/grafana:11.1.3
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
