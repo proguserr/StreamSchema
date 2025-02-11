@@ -41,7 +41,7 @@ Done. Sent=30 Rejected=0
 I created a **Gateway Dashboard** in Grafana to monitor:
 
 - **Valid events/s (pass series)** – Confirms gateway is accepting good events.
-- **Produce latency (P50/P95/P99)** – Ensures we stay within acceptable latency.
+- **Produce latency (P95)** – Ensures we stay within acceptable latency.
 - **Rejects by reason** – Should remain flat in a clean run.
 - **Inflight requests** – Shows brief spikes during bursts.
 
