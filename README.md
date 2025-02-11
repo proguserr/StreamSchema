@@ -51,7 +51,7 @@ I created a **Gateway Dashboard** in Grafana to monitor:
 
 ### **Before Run – Baseline**
 Dashboard is idle, no traffic spikes visible.  
-![SS1 – Baseline dashboard](screenshots/SS1.png)
+![SS1 – Baseline dashboard](screenshots/screenshot1.png)
 
 ---
 
@@ -61,8 +61,8 @@ While `github_ingest.py` was running,refreshed Grafana dashboard showed:
 - **Latency (P50/P95/P99)** showed visible dots representing histogram data points.
 - **Inflight requests** briefly spiked in sync with producer load.  
 
-![SS2 – During run validation spike](screenshots/SS2.png)  
-![SS3 – Latency dots during run](screenshots/SS3.png)
+![SS2 – During run validation spike](screenshots/screenshot2.png)  
+![SS3 – Latency dots during run](screenshots/screenshot3.png)
 
 ---
 
@@ -71,14 +71,14 @@ One minute post producer stopped:
 - Dashboard flattened to baseline.
 - Previous spike history still visible in the latency panel for reference.  
 
-![SS4 – Post run with spike history](screenshots/SS4.png)
+![SS4 – Post run with spike history](screenshots/screenshot4.png)
 
 ---
 
 ### **Consumer Output Verification**
  Kafka consumer printed the accepted messages, confirming schema validation passed for all:  
 
-![SS5 – Consumer output](screenshots/SS5.png)
+![SS5 – Consumer output](screenshots/screenshot5.png)
 
 ---
 
@@ -88,7 +88,7 @@ Queried `http://localhost:9101/metrics` to verify:
 - `gateway_validations_fail_total` remained 0.
 - Latency count and sum aligned with expectations.  
 
-![SS6 – Metrics verification](screenshots/SS6.png)
+![SS6 – Metrics verification](screenshots/screenshot6.png)
 
 ---
 
