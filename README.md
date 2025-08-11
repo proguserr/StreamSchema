@@ -66,6 +66,18 @@ While `github_ingest.py` was running,refreshed Grafana dashboard showed:
 
 ---
 
+### **Clean Pass Run – All Valid Events Accepted**
+This run was configured with only valid events.  
+The dashboard shows:
+- **Gateway validations (pass)** incremented exactly to match sent events.
+- **Gateway validations (fail)** remained **0**.
+- **Rejects by reason** panel aligns perfectly with the pass count.
+- **P95 latency** remained minimal during the run.
+
+![SS9 – Clean pass with matching rejects panel](screenshots/screenshot9.png)
+
+---
+
 ### **After Run – Spike history preserved**
 One minute post producer stopped:
 - Dashboard flattened to baseline.
