@@ -1,18 +1,16 @@
 # StreamSchema – Real-time Event Validation & Observability
 
-## 1. Why I built this  
-I wanted to simulate a real-world event ingestion pipeline where incoming JSON events are validated against a schema **before** being accepted into Kafka.  
-This project serves two purposes:  
-1. **Functional** – Validate that our gateway rejects malformed events and accepts valid ones with low latency.  
-2. **Operational** – Prove that we can monitor ingestion health in real-time using Grafana dashboards.  
+## 1. Why I built this?  
+Simulate an event ingestion pipeline with incoming JSON events that gets validated against a schema **before** being accepted into Kafka.  
 
-I also treated this as a hiring-manager-friendly demonstration of my ability to build, observe, and reason about event-driven systems end-to-end.
+
+ **Functional** – Validate that gateway rejects malformed events and accepts valid ones with low latency.  
+ **Operational** – Monitoring ingestion health in real-time using Grafana dashboards.  
+
 
 ---
 
-## 2. How I approached it  
-
-I split the work into these stages:
+## 2. Approach  
 
 ### **Stage 1 – Schema registry & gateway**
 - Used a local Redpanda Kafka cluster.
@@ -58,7 +56,7 @@ Dashboard is idle, no traffic spikes visible.
 ---
 
 ### **During Run – Ingestion Spike**
-While `github_ingest.py` was running, I refreshed the Grafana dashboard:
+While `github_ingest.py` was running,refreshed Grafana dashboard showed:
 - **Validations (pass)** spiked as events came in.
 - **Latency (P50/P95/P99)** showed visible dots representing histogram data points.
 - **Inflight requests** briefly spiked in sync with producer load.  
@@ -69,7 +67,7 @@ While `github_ingest.py` was running, I refreshed the Grafana dashboard:
 ---
 
 ### **After Run – Spike history preserved**
-One minute after stopping the producer:
+One minute post producer stopped:
 - Dashboard flattened to baseline.
 - Previous spike history still visible in the latency panel for reference.  
 
@@ -78,7 +76,7 @@ One minute after stopping the producer:
 ---
 
 ### **Consumer Output Verification**
-The Kafka consumer printed the accepted messages, confirming schema validation passed for all:  
+ Kafka consumer printed the accepted messages, confirming schema validation passed for all:  
 
 ![SS5 – Consumer output](screenshots/SS5.png)
 
